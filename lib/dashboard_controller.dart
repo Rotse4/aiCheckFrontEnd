@@ -1,17 +1,19 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:my_flutter_project/gemini_model.dart';
 import 'package:my_flutter_project/logger.dart';
 
 class DashboardController extends GetxController {
   final TextEditingController textController = TextEditingController();
-  var result = {}.obs;
+  Rx<GeminiModel> result = GeminiModel().obs;
   var loading = false.obs;
   var errorMessage = ''.obs;
 
   // Backend base URL (update this to your Node.js API or local server)
-  final String baseUrl = 'http://192.168.2.152:8000/api/analyze/';
+  final String baseUrl = 'http://10.106.128.168:8000/api/analyze/';
 
   /// Analyze essay text (calls your backend `/api/analyze` endpoint)
   Future<void> analyzeEssay() async {
@@ -26,33 +28,21 @@ class DashboardController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final response = await http.post(
-        Uri.parse(baseUrl),
+      final response = await Dio().post(
+        baseUrl,
         // headers: {
         //   'Content-Type': 'application/json',
         //   // Optionally include your user session header or auth token
         // },
-        body: {'essay': text},
+        data: {'essay': text},
       );
-      Logger.log("respone body ${response.body}");
+      Logger.log("respone body ${response.data}");
 
       if (response.statusCode == 200) {
-        Logger.log("status code ${response.statusCode}");
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        // print(object)
-
-        if (data['success'] == true && data['result'] != null) {
-          result.value = data['result'];
-        } else {
-          errorMessage.value =
-              data['error'] ?? 'Unexpected response from the server';
-        }
-      } else {
-        print("error fetching ${response.body}");
-        errorMessage.value =
-            'Failed: ${response.statusCode} - ${response.reasonPhrase}';
-
-        print("error fetching ${errorMessage.value}");
+        var geminiData = GeminiModel.fromJson(response.data);
+        result.value = geminiData;
+        Logger.log("result sucess ${geminiData.success}");
+        Logger.log("result ${geminiData.results?.reasoning} ${geminiData.results?.aiProbability}");
       }
     } catch (e) {
       Logger.log("error cought $e");

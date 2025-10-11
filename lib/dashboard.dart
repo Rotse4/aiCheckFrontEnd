@@ -132,7 +132,7 @@ class _DashboardState extends State<Dashboard> {
                   ),
 
                 // Results display
-                if (controller.result.isNotEmpty) ...[
+                if (!controller.result.value.isNull) ...[
                   const Divider(height: 30),
                   const Text(
                     'Analysis Result',
@@ -147,24 +147,24 @@ class _DashboardState extends State<Dashboard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Verdict: ${controller.result["verdict"] ?? "Unknown"}',
+                            'Ai content: ${controller.result.value.results?.aiProbability}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
                           Text(
-                            'AI Probability: ${controller.result["aiProbability"] ?? "?"}%',
+                            'AI Probability: ${controller.result.value.results?.aiProbability}%',
                           ),
                           Text(
-                            'Human Probability: ${controller.result["humanProbability"] ?? "?"}%',
+                            'Human Probability: ${controller.result.value.results?.aiProbability}%',
                           ),
                           Text(
-                            'Confidence: ${controller.result["confidence"] ?? "?"}',
+                            'Confidence: ${controller.result.value.results?.aiProbability}',
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            controller.result["reasoning"] ??
+                            "${controller.result.value.results?.aiProbability}"??
                                 'No reasoning provided.',
                           ),
                         ],
