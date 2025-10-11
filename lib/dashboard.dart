@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:my_flutter_project/dashboard_controller.dart';
+import 'package:my_flutter_project/logger.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
@@ -16,7 +17,7 @@ class _DashboardState extends State<Dashboard> {
   String? _fileName;
 
   Future<void> _pickFile() async {
-    print('Pick File button pressed');
+    Logger.log('Pick File button pressed');
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -39,7 +40,9 @@ class _DashboardState extends State<Dashboard> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to extract text from the document.')),
+            SnackBar(
+              content: Text('Failed to extract text from the document.'),
+            ),
           );
         }
       } else {
@@ -47,9 +50,9 @@ class _DashboardState extends State<Dashboard> {
       }
     } catch (e) {
       print('Error picking file: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking file: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error picking file: $e')));
     }
   }
 
@@ -107,7 +110,9 @@ class _DashboardState extends State<Dashboard> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                   ),
                   child: controller.loading.value
                       ? const CircularProgressIndicator(color: Colors.white)
@@ -131,10 +136,7 @@ class _DashboardState extends State<Dashboard> {
                   const Divider(height: 30),
                   const Text(
                     'Analysis Result',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
                   Card(
@@ -152,11 +154,14 @@ class _DashboardState extends State<Dashboard> {
                             ),
                           ),
                           Text(
-                              'AI Probability: ${controller.result["aiProbability"] ?? "?"}%'),
+                            'AI Probability: ${controller.result["aiProbability"] ?? "?"}%',
+                          ),
                           Text(
-                              'Human Probability: ${controller.result["humanProbability"] ?? "?"}%'),
+                            'Human Probability: ${controller.result["humanProbability"] ?? "?"}%',
+                          ),
                           Text(
-                              'Confidence: ${controller.result["confidence"] ?? "?"}'),
+                            'Confidence: ${controller.result["confidence"] ?? "?"}',
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             controller.result["reasoning"] ??
