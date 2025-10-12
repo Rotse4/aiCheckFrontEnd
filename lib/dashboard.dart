@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:my_flutter_project/dashboard_controller.dart';
 import 'package:my_flutter_project/logger.dart';
+import 'package:my_flutter_project/auth_service.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
@@ -25,13 +26,13 @@ class _DashboardState extends State<Dashboard> {
       );
 
       if (result != null && result.files.isNotEmpty) {
-        final filePath = result.files.first.path!;
+        final platformFile = result.files.first;
         setState(() {
-          _fileName = result.files.first.name;
+          _fileName = platformFile.name;
         });
 
         print('Uploading file: $_fileName');
-        final extractedText = await controller.uploadDocx(filePath);
+        final extractedText = await controller.uploadDocx(platformFile);
 
         if (extractedText != null) {
           controller.textController.text = extractedText;
@@ -62,7 +63,7 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   void dispose() {
-    controller.textController.dispose();
+    // Do not dispose controller.textController here; the GetX controller owns it.
     super.dispose();
   }
 
@@ -70,113 +71,169 @@ class _DashboardState extends State<Dashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Essay Analyzer Dashboard'),
-        backgroundColor: Colors.orange,
+        title: const Text('AI Essay Analyzer'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'History',
+            onPressed: () {
+              Navigator.of(context).pushNamed('/history');
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.account_circle),
+            tooltip: 'Login / Logout',
+            onPressed: () async {
+              final token = await AuthService.instance.getToken();
+              if (token != null && token.isNotEmpty) {
+                await AuthService.instance.clearAuth();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Logged out')),
+                  );
+                  Navigator.of(context).pushReplacementNamed('/login');
+                }
+              } else {
+                if (context.mounted) {
+                  Navigator.of(context).pushNamed('/login');
+                }
+              }
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Obx(() {
-          return SingleChildScrollView(
+      body: Obx(() {
+        final theme = Theme.of(context);
+        final width = MediaQuery.of(context).size.width;
+        final isWide = width >= 900;
+
+        final editorCard = Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
+              children: [
+                Text(
+                  'Paste or Upload your essay',
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: controller.textController,
-                  maxLines: 8,
+                  maxLines: 12,
                   decoration: const InputDecoration(
                     labelText: 'Enter or paste text to analyze',
-                    border: OutlineInputBorder(),
+                    hintText: 'Type or paste your essay here... ',
                   ),
                 ),
-                const SizedBox(height: 20),
-
-                // File upload
-                ElevatedButton.icon(
-                  onPressed: controller.loading.value ? null : _pickFile,
-                  icon: const Icon(Icons.upload_file),
-                  label: const Text('Upload .docx File'),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _fileName != null
-                      ? 'Selected file: $_fileName'
-                      : 'No file selected',
-                ),
-                const SizedBox(height: 20),
-
-                // Analyze button
-                ElevatedButton(
-                  onPressed: controller.loading.value ? null : _analyzeEssay,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: controller.loading.value ? null : _pickFile,
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text('Upload .docx'),
                     ),
-                  ),
-                  child: controller.loading.value
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Analyze Essay',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Error display
-                if (controller.errorMessage.isNotEmpty)
-                  Text(
-                    controller.errorMessage.value,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-
-                // Results display
-                if (!controller.result.value.isNull) ...[
-                  const Divider(height: 30),
-                  const Text(
-                    'Analysis Result',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Ai content: ${controller.result.value.results?.aiProbability}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            'AI Probability: ${controller.result.value.results?.aiProbability}%',
-                          ),
-                          Text(
-                            'Human Probability: ${controller.result.value.results?.aiProbability}%',
-                          ),
-                          Text(
-                            'Confidence: ${controller.result.value.results?.aiProbability}',
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "${controller.result.value.results?.aiProbability}"??
-                                'No reasoning provided.',
-                          ),
-                        ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _fileName == null ? 'No file selected' : 'Selected: $_fileName',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: controller.loading.value ? null : _analyzeEssay,
+                      icon: controller.loading.value
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.analytics),
+                      label: const Text('Analyze'),
+                    ),
+                  ],
+                ),
+                if (controller.errorMessage.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      controller.errorMessage.value,
+                      style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                    ),
                   ),
-                ],
+                ]
               ],
             ),
-          );
-        }),
-      ),
+          ),
+        );
+
+        final result = controller.result.value.results;
+        final resultCard = Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: result == null
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Analysis Result', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Run an analysis to see AI/Human probabilities with reasoning.',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Analysis Result', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 12),
+                      Text('AI Probability: ${result.aiPercent.toStringAsFixed(1)}%'),
+                      const SizedBox(height: 6),
+                      LinearProgressIndicator(value: (result.aiProbability ?? 0.0).clamp(0.0, 1.0)),
+                      const SizedBox(height: 12),
+                      Text('Human Probability: ${result.humanPercent.toStringAsFixed(1)}%'),
+                      const SizedBox(height: 20),
+                      Text('Reasoning', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 6),
+                      Text(result.reasoning ?? 'No reasoning provided.'),
+                    ],
+                  ),
+          ),
+        );
+
+        final content = isWide
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 6, child: editorCard),
+                  Expanded(flex: 5, child: resultCard),
+                ],
+              )
+            : Column(
+                children: [
+                  editorCard,
+                  resultCard,
+                ],
+              );
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: SingleChildScrollView(child: content),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

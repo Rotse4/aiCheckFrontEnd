@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'dashboard.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
+import 'auth_service.dart';
+import 'history_screen.dart';
+import 'ui/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,29 +15,24 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Dashboard(),
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+    return FutureBuilder<String?>(
+      future: AuthService.instance.getToken(),
+      builder: (context, snapshot) {
+        final hasToken = (snapshot.data != null && snapshot.data!.isNotEmpty);
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          routes: {
+            '/login': (_) => LoginScreen(),
+            '/register': (_) => RegisterScreen(),
+            '/dashboard': (_) => const Dashboard(),
+            '/history': (_) => const HistoryScreen(),
+          },
+          home: hasToken ? const Dashboard() : LoginScreen(),
+          theme: buildAppTheme(),
+        );
+      },
     );
   }
 }
