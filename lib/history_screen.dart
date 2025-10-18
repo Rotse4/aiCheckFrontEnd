@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_flutter_project/ui/app_shell.dart';
 import 'history_service.dart';
 import 'history_model.dart';
 
@@ -49,8 +50,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Analysis History')),
+    return AppShell(
+      title: 'Analysis History',
+      selectedIndex: 1,
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(

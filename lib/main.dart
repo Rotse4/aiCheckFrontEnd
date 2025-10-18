@@ -6,6 +6,7 @@ import 'register_screen.dart';
 import 'auth_service.dart';
 import 'history_screen.dart';
 import 'ui/theme.dart';
+import 'purchase_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
             '/register': (_) => RegisterScreen(),
             '/dashboard': (_) => const Dashboard(),
             '/history': (_) => const HistoryScreen(),
+            '/purchase': (_) => const PurchaseScreen(),
           },
           home: hasToken ? const Dashboard() : LoginScreen(),
           theme: buildAppTheme(),

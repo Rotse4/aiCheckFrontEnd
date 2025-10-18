@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:my_flutter_project/dashboard_controller.dart';
 import 'package:my_flutter_project/logger.dart';
 import 'package:my_flutter_project/auth_service.dart';
+import 'package:my_flutter_project/ui/app_shell.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
@@ -69,39 +70,9 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('AI Essay Analyzer'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            tooltip: 'History',
-            onPressed: () {
-              Navigator.of(context).pushNamed('/history');
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            tooltip: 'Login / Logout',
-            onPressed: () async {
-              final token = await AuthService.instance.getToken();
-              if (token != null && token.isNotEmpty) {
-                await AuthService.instance.clearAuth();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Logged out')),
-                  );
-                  Navigator.of(context).pushReplacementNamed('/login');
-                }
-              } else {
-                if (context.mounted) {
-                  Navigator.of(context).pushNamed('/login');
-                }
-              }
-            },
-          ),
-        ],
-      ),
+    return AppShell(
+      title: 'AI Essay Analyzer',
+      selectedIndex: 0,
       body: Obx(() {
         final theme = Theme.of(context);
         final width = MediaQuery.of(context).size.width;
@@ -167,6 +138,17 @@ class _DashboardState extends State<Dashboard> {
                       style: TextStyle(color: theme.colorScheme.onErrorContainer),
                     ),
                   ),
+                  if (controller.insufficientCredits.value) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.of(context).pushNamed('/purchase'),
+                        icon: const Icon(Icons.shopping_bag_outlined),
+                        label: const Text('Buy Credits'),
+                      ),
+                    ),
+                  ],
                 ]
               ],
             ),

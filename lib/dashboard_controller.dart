@@ -12,6 +12,7 @@ class DashboardController extends GetxController {
   Rx<GeminiModel> result = GeminiModel().obs;
   var loading = false.obs;
   var errorMessage = ''.obs;
+  var insufficientCredits = false.obs;
 
   @override
   void onClose() {
@@ -33,6 +34,7 @@ class DashboardController extends GetxController {
 
     loading.value = true;
     errorMessage.value = '';
+    insufficientCredits.value = false;
 
     try {
       final token = await AuthService.instance.getToken();
@@ -58,7 +60,12 @@ class DashboardController extends GetxController {
       }
     } catch (e) {
       Logger.log("error cought $e");
-      errorMessage.value = 'Error: $e';
+      if (e is DioException && e.response?.statusCode == 402) {
+        insufficientCredits.value = true;
+        errorMessage.value = 'Insufficient credits. Please buy credits to continue.';
+      } else {
+        errorMessage.value = 'Error: $e';
+      }
     } finally {
       loading.value = false;
     }
